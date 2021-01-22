@@ -6,8 +6,26 @@ const beerPriceCache = new NodeCache({
   stdTTL: 0, // unlimited
 });
 
-export async function getCurrentPrices() {
-  const priceList = beerPriceCache.get("prices");
+type BeerPriceInfo = {
+  name: string;
+  price: number;
+  special:boolean;
+}
+type CachedBeerPriceData = {
+  timestamp: number,
+  prices: BeerPriceInfo[];
+}
+
+export async function getCurrentPrices(): Promise<CachedBeerPriceData> {
+  const priceList = beerPriceCache.get<CachedBeerPriceData>("prices");
+
+  // fallback if cache is empty
+  if(!priceList){
+    return {
+      prices: [],
+      timestamp: Date.now()
+    }
+  }
   return priceList;
 }
 
@@ -20,13 +38,14 @@ async function updateCurrentPrices() {
   const priceList = names.map((name: string) => ({
     name,
     price: (Math.random() * 2).toFixed(3),
+    special: Boolean(Math.random() < 0.1),
   }));
 
   const totalTime = (Date.now() - startTime).toFixed(2);
   console.log(`Getting beer prices took ${totalTime}ms`);
   beerPriceCache.set("prices", {
     prices: priceList,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
 }
 

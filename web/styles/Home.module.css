@@ -4,10 +4,7 @@
 
 
 .main {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+
 }
 
 .header {
@@ -45,4 +42,18 @@
   margin: 0;
   font-size: 1.25rem;
   line-height: 1.5;
+}
+
+.beers {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+
+.specials {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  background-color: gold;
 }
