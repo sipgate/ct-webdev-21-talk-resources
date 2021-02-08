@@ -1,79 +1,86 @@
 import Axios from "axios";
 import { formatDistanceToNowStrict } from "date-fns";
 import Head from "next/head";
-import { useEffect, useState } from "react";
+import React, { ChangeEvent, useState } from "react";
+import { FadeLoader } from "react-spinners";
+import useSWR from 'swr';
 import styles from "../styles/Home.module.css";
 
+async function fetchPrices() {
+  const { data } = await Axios.get("http://localhost:8081/prices")
+  console.log("Fetched beer prices", data)
+  return data
+}
+
+async function fetchSearchResults(query: string) {
+  const { data } = await Axios.get("http://localhost:8081/search", {
+    params: {
+      q: query
+    }
+  })
+  console.log("Fetched search results", data)
+  return data
+}
+
 export default function Home() {
-  const [prices, setPrices] = useState<Array<{ name: string; price: number }>>([]);
-  const [specials, setSpecials] = useState<Array<{ name: string; price: number }>>([]);
-  const [timestamp, setTimestamp] = useState<number>(0);
-  const [loading, setLoading] = useState(false);
-  const [loadTime, setLoadTime] = useState(0);
+  const [searchResults, setSearchResults] = useState<Array<{ name: string; price: number }>>([]);
+  const [query, setQuery] = useState<string>("");
+  const { data: beerPriceData } = useSWR('beer-prices', fetchPrices);
 
-  useEffect(() => {
-    setLoading(true)
-    const start = Date.now();
-    Axios.get("http://localhost:8081/prices").then(({ data: { prices, timestamp } }) => {
-      setPrices(prices);
-      setTimestamp(timestamp);
-    }).finally(() => {
-      setLoading(false)
-      setLoadTime(Date.now() - start);
-    });
-  }, []);
-
-  const updateprices = () => {
-    const start = Date.now();
-    Axios.get("http://localhost:8081/prices").then(({ data: { prices, timestamp } }) => {
-      setPrices(prices);
-      setTimestamp(timestamp);
-    }).finally(() => {
-      setLoadTime(Date.now() - start);
-    });
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
   }
 
-  useEffect(() => {
-    Axios.get("http://localhost:8081/specials").then(({ data }) => {
-      setSpecials(data);
-    }).catch(e => console.log("error fetching specials", e))
-  }, []);
+  const handleSearch = async () => {
+    const res = await fetchSearchResults(query);
+    console.log("Search Results", res)
+    setSearchResults(res.prices)
+  }
 
+
+  if (!beerPriceData) {
+    return <div className={styles.loading}>
+      <FadeLoader />
+    </div>
+  }
 
   return (
     <div className={styles.root}>
       <Head>
-        <title>Bier!</title>
+        <title>Bier Börse 3000</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <div className={styles.header}>
-          <h3>
-            {loading ? "loading..." : `Load time: ${loadTime}ms - Datenstand ${formatDistanceToNowStrict(new Date(timestamp))} alt`}
-            <button onClick={updateprices}>update</button>
-          </h3>
+        <div className={styles.search}>
+          <div>
+            <input placeholder="Search" value={query} onChange={handleSearchChange}></input><button onClick={handleSearch}>Search</button>
+          </div>
+          <div className={styles.searchResults}>
+            {searchResults.map(({ name, price }) => (
+              <div key={name}>
+                <h3>{name}</h3>
+                <p>
+                  {price}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
-        <h4>Specials</h4>
-        <div className={styles.specials}>
-          {specials.map(({ name, price }) => (
-            <div key={name} className={styles.beer}>
-              <h3>{name}</h3>
-              <p>
-                {price}
-              </p>
-            </div>
-          ))}
+        <div>
+          Datenstand: {formatDistanceToNowStrict(new Date(beerPriceData.timestamp))}
         </div>
-        <h4>All beer prices</h4>
         <div className={styles.beers}>
-          {prices.sort((a, b) => a.price - b.price).map(({ name, price }) => (
-            <div key={name} className={styles.beer}>
-              <h3>{name}</h3>
-              <p>
-                {price}
-              </p>
-            </div>
-          ))}
+          {beerPriceData.prices.sort((a, b) => a.price - b.price)
+            .map(({ name, price }) => (
+              <div key={name} className={styles.beer}>
+                <div className={styles.beerPrice}>
+                  {price}€/l
+              </div>
+                <div className={styles.beerName}>{name}
+                </div>
+                <button>Jetzt kaufen!</button>
+              </div>
+            ))}
         </div>
       </main>
     </div>

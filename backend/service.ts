@@ -11,6 +11,7 @@ type BeerPriceInfo = {
   price: number;
   special:boolean;
 }
+
 type CachedBeerPriceData = {
   timestamp: number,
   prices: BeerPriceInfo[];
@@ -30,7 +31,7 @@ export async function getCurrentPrices(): Promise<CachedBeerPriceData> {
 }
 
 async function updateCurrentPrices() {
-  console.log('Get current beer prices from "DB"');
+  console.log('Update current beer prices');
   const startTime = Date.now();
   await sleepRandom(5000); // Emulate network, db speed, etc. Sleep up to 5s
   const names = await getBeerNames();
@@ -43,6 +44,7 @@ async function updateCurrentPrices() {
 
   const totalTime = (Date.now() - startTime).toFixed(2);
   console.log(`Getting beer prices took ${totalTime}ms`);
+  
   beerPriceCache.set("prices", {
     prices: priceList,
     timestamp: Date.now(),
