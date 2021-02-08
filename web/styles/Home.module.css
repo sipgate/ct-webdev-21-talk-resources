@@ -68,9 +68,5 @@
   display: flex;
   flex-wrap: wrap;
   width: 100%;
-}
-
-.searchResults div {
-  width: 100px;
-  height: 100px;
+  background-color: white;
 }

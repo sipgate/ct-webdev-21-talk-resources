@@ -6,14 +6,25 @@ import { FadeLoader } from "react-spinners";
 import useSWR from 'swr';
 import styles from "../styles/Home.module.css";
 
+type BeerPriceInfo = {
+  name: string;
+  price: number;
+  special: boolean;
+}
+
+type BeerPriceData = {
+  timestamp: number,
+  prices: BeerPriceInfo[];
+}
+
 async function fetchPrices() {
-  const { data } = await Axios.get("http://localhost:8081/prices")
+  const { data } = await Axios.get<BeerPriceData>("http://localhost:8081/prices")
   console.log("Fetched beer prices", data)
   return data
 }
 
 async function fetchSearchResults(query: string) {
-  const { data } = await Axios.get("http://localhost:8081/search", {
+  const { data } = await Axios.get<BeerPriceData>("http://localhost:8081/search", {
     params: {
       q: query
     }
@@ -22,8 +33,19 @@ async function fetchSearchResults(query: string) {
   return data
 }
 
+const Beer: React.FC<{ beer: BeerPriceInfo }> = ({ beer: { price, name } }) => {
+  return (<div key={name} className={styles.beer}>
+    <div className={styles.beerPrice}>
+      {price}€/l
+  </div>
+    <div className={styles.beerName}>{name}
+    </div>
+    <button>Jetzt kaufen!</button>
+  </div>)
+}
+
 export default function Home() {
-  const [searchResults, setSearchResults] = useState<Array<{ name: string; price: number }>>([]);
+  const [searchResults, setSearchResults] = useState<BeerPriceInfo[]>([]);
   const [query, setQuery] = useState<string>("");
   const { data: beerPriceData } = useSWR('beer-prices', fetchPrices, {
     refreshInterval: 30
@@ -58,13 +80,8 @@ export default function Home() {
             <input placeholder="Search" value={query} onChange={handleSearchChange}></input><button onClick={handleSearch}>Search</button>
           </div>
           <div className={styles.searchResults}>
-            {searchResults.map(({ name, price }) => (
-              <div key={name}>
-                <h3>{name}</h3>
-                <p>
-                  {price}
-                </p>
-              </div>
+            {searchResults.map((beer) => (
+              <Beer key={beer.name} beer={beer} />
             ))}
           </div>
         </div>
@@ -73,15 +90,8 @@ export default function Home() {
         </div>
         <div className={styles.beers}>
           {beerPriceData.prices.sort((a, b) => a.price - b.price)
-            .map(({ name, price }) => (
-              <div key={name} className={styles.beer}>
-                <div className={styles.beerPrice}>
-                  {price}€/l
-              </div>
-                <div className={styles.beerName}>{name}
-                </div>
-                <button>Jetzt kaufen!</button>
-              </div>
+            .map((beer) => (
+              <Beer key={beer.name} beer={beer} />
             ))}
         </div>
       </main>
