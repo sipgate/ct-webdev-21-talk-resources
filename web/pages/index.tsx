@@ -25,7 +25,9 @@ async function fetchSearchResults(query: string) {
 export default function Home() {
   const [searchResults, setSearchResults] = useState<Array<{ name: string; price: number }>>([]);
   const [query, setQuery] = useState<string>("");
-  const { data: beerPriceData } = useSWR('beer-prices', fetchPrices);
+  const { data: beerPriceData } = useSWR('beer-prices', fetchPrices, {
+    refreshInterval: 30
+  });
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
